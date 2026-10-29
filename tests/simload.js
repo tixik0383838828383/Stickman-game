@@ -7,7 +7,7 @@ function load(extra) {
   vm.createContext(ctx);
   let code = '';
   for (const f of files) { const p = path.join(root, 'js', f + '.js'); if (fs.existsSync(p)) code += '\n;' + fs.readFileSync(p, 'utf8').replace(/^'use strict';/m, ''); }
-  code += '\n;this.__x = { World, PhysicsEngine, NO_INPUT, PLAYER_CONFIG, PHYS, Util, Platform, Crate, Saw, Spike, EntityFactory, Player, LEVELS: (typeof LEVELS!=="undefined"?LEVELS:null) };';
+  code += '\n;this.__x = { World, PhysicsEngine, NO_INPUT, PLAYER_CONFIG, PHYS, Util, Platform, Crate, Saw, Spike, EntityFactory, Player, LEVELS: (typeof LEVELS!=="undefined"?LEVELS:null), EXTRA_LEVELS: (typeof EXTRA_LEVELS!=="undefined"?EXTRA_LEVELS:[]) };';
   vm.runInContext(code, ctx, { filename: 'game-bundle.js' });
   return ctx.__x;
 }

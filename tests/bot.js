@@ -2,7 +2,7 @@
    Поиск «лучший-первым» по макро-шагам между путевыми точками (контрольные точки -> финиш).
    Использование: node tests/bot.js [номер уровня | all] [--secrets] */
 const { load } = require('./simload');
-const X = load(); const { World, PhysicsEngine, PHYS, LEVELS } = X;
+const X = load(); const { World, PhysicsEngine, PHYS } = X; const LEVELS = X.LEVELS.concat(X.EXTRA_LEVELS || []);
 const dt = PHYS.dt, MACRO = 6;
 const ACTIONS = [
   { l: 0, r: 1, j: 0, d: 0 }, { l: 0, r: 1, j: 1, d: 0 }, { l: 0, r: 0, j: 1, d: 0 }, { l: 1, r: 0, j: 1, d: 0 },
@@ -67,19 +67,19 @@ function testLevel(i, verbose) {
   let route = process.env.BOT_ROUTE ? JSON.parse(process.env.BOT_ROUTE) .map(r => ({ x: r[0], y: r[1] })) : level.route ? level.route.map(r => ({ x: r[0], y: r[1] })) : [];
   if (!level.route && !process.env.BOT_ROUTE) { route = level.obj.filter(o => o.t === 'cp' && !o.start).map(o => ({ x: o.x, y: o.y })); }
   const fin = level.obj.find(o => o.t === 'fin'); if (!process.env.BOT_NOFIN) route.push({ x: fin.x, y: fin.y, finish: true });
-  let total = 0, steps = 0; let cur = w.saveSim();
+  let total = 0, steps = 0; let cur = w.saveSim(); const acts = [];
   for (let k = 0; k < route.length; k++) {
     w.loadSim(cur); w.player.dead = false;
     const r = search(w, route[k], { dyn, finish: !!route[k].finish, maxN: level.botN || 150000 });
     total += r.n;
     if (!r.ok) { if (verbose) console.log(`  ✗ сегмент ${k + 1}/${route.length} -> (${route[k].x},${route[k].y}) не найден; лучший h=${r.best.toFixed(0)}, узлов ${r.n}`); if (verbose && r.state) console.log('    лучшее положение игрока: x=' + Math.round(r.state.p.x) + ' y=' + Math.round(r.state.p.y) + ' t=' + r.state.time.toFixed(1)); return { ok: false, seg: k, best: r.best, bestState: r.state, n: total, ms: Date.now() - t0 }; }
     cur = r.state; // продолжаем из достигнутого состояния; игрок мог пройти флаг — это нормально
-    let len = 0; for (let p = r.path; p; p = p.prev) len++; steps += len;
+    let len = 0; const seg = []; for (let p = r.path; p; p = p.prev) { len++; seg.push(p.a); } steps += len; acts.push(...seg.reverse());
     if (verbose) console.log(`  ✓ сегмент ${k + 1}/${route.length} (${len * MACRO * dt}s, узлов ${r.n})`);
   }
-  return { ok: true, time: (steps * MACRO * dt).toFixed(1), n: total, ms: Date.now() - t0 };
+  return { ok: true, time: (steps * MACRO * dt).toFixed(1), n: total, ms: Date.now() - t0, acts };
 }
-module.exports = { testLevel };
+module.exports = { testLevel, MACRO };
 if (require.main === module) {
   const arg = process.argv[2] || 'all'; const verbose = !process.argv.includes('-q');
   const list = arg === 'all' ? LEVELS.map((_, i) => i) : [parseInt(arg) - 1];
