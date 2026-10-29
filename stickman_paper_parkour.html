@@ -202,6 +202,7 @@ button { font-family:var(--font); color:var(--ink); }
     <table>
       <tr><th>Компьютер</th><th></th></tr>
       <tr><td>A / D, ← →</td><td>движение</td></tr>
+      <tr><td>Бег</td><td>отдельной кнопки и двойного нажатия нет: держи ← / → — персонаж разгоняется до максимальной скорости примерно за 0,15 с, и включается анимация бега. Слайд (↓) работает только на скорости</td></tr>
       <tr><td>Пробел / W / ↑</td><td>прыжок (держи — выше), у верёвки — лезть вверх</td></tr>
       <tr><td>S / ↓</td><td>присесть; на бегу — слайд; у верёвки — вниз; на тонкой платформе — спрыгнуть</td></tr>
       <tr><td>Прыжок у стены</td><td>скольжение по стене и прыжок от стены (←/→ в сторону стены)</td></tr>
@@ -2120,7 +2121,7 @@ const mk = (name, world, hint, w, h, sx, sy, b, extra) => LEVELS.push(Object.ass
   [2500, 2700, 2900].forEach(x => { b.saw(x, 640, 30); b.coin(x + 100, 560); });
   b.plat(3080, 690, 100).plat(3290, 660, 100);
   b.plat(3150, 590, 60).plat(3300, 540, 70);   // верхний путь за большой монетой
-  b.saw(3235, 340, 34).saw(3445, 470, 34);
+  b.saw(3235, 440, 34).saw(3445, 470, 34);
   b.coin(3130, 640).coin(3340, 610).coin(3235, 500, 5);
   b.cp(3550, 700).saw(3800, 672, 36).coins(3750, 580, 3, 50).fin(4100, 700);
   mk('Пилы', 2, 'Вращающиеся пилы: перепрыгивай, подныривай и не прыгай слишком высоко.', 4300, 900, 120, 700, b);
@@ -2143,7 +2144,7 @@ const mk = (name, world, hint, w, h, sx, sy, b, extra) => LEVELS.push(Object.ass
   b.cp(3250, 700);
   b.saw(3550, 664, 36, { ty: 'trig', mx: -450, my: 0, sp: 520, tr: 260 }).txt(3480, 600, 'тихо...', 22).coins(3300, 640, 5, 45);
   b.cp(3950, 700);
-  b.add({ t: 'sblock', x: 4200, y: 590, s: 64, m: { mx: 0, my: -170, sp: 140 } }).coins(4400, 620, 3, 40);
+  b.add({ t: 'sblock', x: 4200, y: 668, s: 64, m: { mx: 0, my: -170, sp: 140 } }).coins(4400, 620, 3, 40);
   b.fin(4850, 700).coin(4600, 600, 5);
   mk('Движущаяся опасность', 2, 'Лифты, маятник, пила-засада и шипастый блок. Смотри на тайминг.', 5100, 900, 120, 700, b,
     { route: [[650, 700], [1980, 700], [2700, 480], [3050, 480], [3250, 700], [3950, 700]] });
@@ -2186,7 +2187,7 @@ const mk = (name, world, hint, w, h, sx, sy, b, extra) => LEVELS.push(Object.ass
   [[1830, 680], [2030, 640], [2230, 600], [2430, 640]].forEach(([x, y]) => { b.plat(x, y, 120, 24, 'vanish'); b.coin(x + 60, y - 55); });
   b.cp(2700, 700).txt(2800, 600, 'мост рассыпается — беги!', 22);
   for (let i = 0; i < 10; i++) b.plat(3050 + i * 60, 700, 60, 18, 'crumble', { grp: 'b1' });
-  b.coins(3100, 640, 8, 60);
+  b.coins(3100, 640, 2, 60).coin(3220, 568).coins(3280, 640, 5, 60);   // монета над ступенькой, а не внутри неё
   // секретная лесенка из исчезающих платформ над мостом
   b.plat(3180, 610, 90, 24, 'vanish').plat(3330, 520, 90, 24, 'vanish').plat(3480, 430, 90, 24, 'vanish').coin(3525, 380, 's');
   [[3760, 680], [3970, 640], [4180, 600]].forEach(([x, y]) => { b.plat(x, y, 130, 24, 'paper'); b.coin(x + 65, y - 55); });
@@ -2307,7 +2308,7 @@ const mk = (name, world, hint, w, h, sx, sy, b, extra) => LEVELS.push(Object.ass
   b.cp(4300, 700);
   // финишная серия
   [[4600, 640, 'oneway'], [4800, 590, 'oneway'], [5000, 540, 'oneway']].forEach(([x, y, k]) => { b.plat(x, y, 90, 16, k); b.coin(x + 45, y - 50); });
-  b.saw(4745, 560, 34, { ty: 'pend', rg: 150, ang: 40, sp: 3 });
+  b.saw(4918, 330, 34, { ty: 'pend', rg: 150, ang: 40, sp: 3 });
   b.spike(4560, 678, 6).spike(5100, 678, 6);
   b.fin(5350, 700).coin(5250, 620, 5);
   b.plat(1800, 290, 120, 20).coin(1860, 240, 's');
@@ -3018,7 +3019,10 @@ class LevelEditor {
     this.sel = null; this.tool = 'select'; this.undoStack = []; this.redoStack = []; this.dirty = true;
     this.$('edName').value = this.level.name; this.$('edW').value = this.level.w; this.$('edH').value = this.level.h;
     this.cam = { x: Math.min(this.level.w / 2, 700), y: this.level.h / 2, z: Math.min(this.W / 1300, this.H / (this.level.h + 120)) };
-    this.cam.z = Util.clamp(this.cam.z, 0.2, 1.2); this.cam.x = this.W / 2 / this.cam.z; this.cam.y = this.level.h / 2;
+    // поле видно между панелью инструментов (слева ~130px) и свойствами (справа ~230px), под верхней панелью (~85px)
+    const availW = Math.max(200, this.W - 380), availH = Math.max(200, this.H - 100);
+    this.cam.z = Util.clamp(Math.min(availW / 1300, availH / (this.level.h + 60)), 0.2, 1.2);
+    this.cam.x = (this.W / 2 - 140) / this.cam.z; this.cam.y = this.level.h / 2 - (-20) / this.cam.z;
     this.refreshTools(); this.refreshProps(); this.msg('Редактор: выбери инструмент слева и кликни по полю. Колесо — зум, перетаскивание пустого места — прокрутка.', 6000);
   }
   resume() { this.dirty = true; this.refreshTools(); this.refreshProps(); this.msg('Возврат из теста.', 2000); }
@@ -3309,7 +3313,8 @@ class LevelEditor {
     const g = this.g, dpr = g.dpr, z = this.cam.z, W = this.W, H = this.H;
     const view = { x: this.cam.x - W / 2 / z, y: this.cam.y - H / 2 / z, w: W / z, h: H / z };
     ctx.setTransform(dpr * z, 0, 0, dpr * z, (-view.x * z) * dpr, (-view.y * z) * dpr);
-    g.drawPaper(ctx, view);
+    ctx.fillStyle = g.paperPat; ctx.fillRect(view.x, view.y, view.w, view.h);   // фон редактора: узор в мировых координатах (двигается вместе с картой)
+    ctx.fillStyle = g.ruledPat; ctx.fillRect(view.x, view.y, view.w, view.h);
     // сетка
     if (this.showGrid) {
       let step = this.grid; while (step * z < 14) step *= 2;

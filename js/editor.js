@@ -96,7 +96,10 @@ class LevelEditor {
     this.sel = null; this.tool = 'select'; this.undoStack = []; this.redoStack = []; this.dirty = true;
     this.$('edName').value = this.level.name; this.$('edW').value = this.level.w; this.$('edH').value = this.level.h;
     this.cam = { x: Math.min(this.level.w / 2, 700), y: this.level.h / 2, z: Math.min(this.W / 1300, this.H / (this.level.h + 120)) };
-    this.cam.z = Util.clamp(this.cam.z, 0.2, 1.2); this.cam.x = this.W / 2 / this.cam.z; this.cam.y = this.level.h / 2;
+    // поле видно между панелью инструментов (слева ~130px) и свойствами (справа ~230px), под верхней панелью (~85px)
+    const availW = Math.max(200, this.W - 380), availH = Math.max(200, this.H - 100);
+    this.cam.z = Util.clamp(Math.min(availW / 1300, availH / (this.level.h + 60)), 0.2, 1.2);
+    this.cam.x = (this.W / 2 - 140) / this.cam.z; this.cam.y = this.level.h / 2 - (-20) / this.cam.z;
     this.refreshTools(); this.refreshProps(); this.msg('Редактор: выбери инструмент слева и кликни по полю. Колесо — зум, перетаскивание пустого места — прокрутка.', 6000);
   }
   resume() { this.dirty = true; this.refreshTools(); this.refreshProps(); this.msg('Возврат из теста.', 2000); }
@@ -387,7 +390,8 @@ class LevelEditor {
     const g = this.g, dpr = g.dpr, z = this.cam.z, W = this.W, H = this.H;
     const view = { x: this.cam.x - W / 2 / z, y: this.cam.y - H / 2 / z, w: W / z, h: H / z };
     ctx.setTransform(dpr * z, 0, 0, dpr * z, (-view.x * z) * dpr, (-view.y * z) * dpr);
-    g.drawPaper(ctx, view);
+    ctx.fillStyle = g.paperPat; ctx.fillRect(view.x, view.y, view.w, view.h);   // фон редактора: узор в мировых координатах (двигается вместе с картой)
+    ctx.fillStyle = g.ruledPat; ctx.fillRect(view.x, view.y, view.w, view.h);
     // сетка
     if (this.showGrid) {
       let step = this.grid; while (step * z < 14) step *= 2;

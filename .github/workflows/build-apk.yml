@@ -34,6 +34,11 @@ jobs:
           npx cap add android
           npx cap sync android
 
+      - name: App icon
+        run: |
+          pip install --quiet pillow
+          python3 tools/make_icons.py android/app/src/main/res
+
       - name: Landscape + fullscreen
         run: |
           python3 - <<'PY'
