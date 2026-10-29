@@ -44,7 +44,8 @@ class Game {
   }
   /* ---------- размер экрана ---------- */
   resize() {
-    this.dpr = this.settings.lowFx ? 1 : Math.min(window.devicePixelRatio || 1, 2);
+    this.dprCap = this.dprCap || 2;
+    this.dpr = this.settings.lowFx ? 1 : Math.min(window.devicePixelRatio || 1, this.dprCap);
     this.W = window.innerWidth; this.H = window.innerHeight;
     this.canvas.width = Math.round(this.W * this.dpr); this.canvas.height = Math.round(this.H * this.dpr);
     this.cam.resize(this.W, this.H, this.settings.zoom);
@@ -106,7 +107,7 @@ class Game {
   /* ---------- главный цикл ---------- */
   frame(now) {
     requestAnimationFrame(t => this.frame(t));
-    let dt = (now - this.last) / 1000; this.last = now; if (!(dt > 0)) dt = 0; if (dt > PHYS.maxFrame) dt = PHYS.maxFrame;
+    let dt = (now - this.last) / 1000; this.last = now; this.autoRes(dt); if (!(dt > 0)) dt = 0; if (dt > PHYS.maxFrame) dt = PHYS.maxFrame;
     this._ft += dt; this._fc++; if (this._ft > 0.5) { this.fps = Math.round(this._fc / this._ft); this._fc = 0; this._ft = 0; }
     this.ha.update(dt);
     try {
@@ -115,6 +116,15 @@ class Game {
       else if (this.state === 'editor') this.editor.update(dt);
       this.draw(dt);
     } catch (e) { console.error(e); this.errCount = (this.errCount || 0) + 1; if (this.errCount === 1) this.ui.toast('Ошибка: ' + e.message, 5000); }
+  }
+  /** авто-разрешение: если на слабом телефоне кадр стабильно дольше ~26 мс, плавно снижаем разрешение холста (2 → 1.5 → 1.25 → 1) */
+  autoRes(raw) {
+    if (this.state !== 'playing' || raw > 0.25 || document.hidden) { this._slow = 0; return; }
+    this._slow = raw > 0.026 ? (this._slow || 0) + raw : Math.max(0, (this._slow || 0) - raw * 2);
+    if (this._slow > 1.5 && this.dpr > 1.01) {
+      const steps = [2, 1.5, 1.25, 1], next = steps.find(v => v < this.dpr - 0.01) || 1;
+      this.dprCap = next; this._slow = 0; this.resize();
+    }
   }
   updatePlay(dt) {
     const w = this.world; this.accum += dt;
@@ -184,24 +194,47 @@ class Game {
     return got;
   }
   /* ---------- отрисовка ---------- */
+  /** Кэш фона под текущий масштаб: бумага и каракули заранее масштабируются до целых пикселей устройства,
+      поэтому каждый кадр это несколько быстрых blit'ов без пересэмплирования (картинка не меняется). */
+  bgCache(z, dz) {
+    const key = z.toFixed(3) + '|' + dz.toFixed(3); this._bg = this._bg || {};
+    if (this._bg[key]) return this._bg[key];
+    const mk = (src, w) => { const c = document.createElement('canvas'); c.width = c.height = w; const x = c.getContext('2d'); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high'; x.drawImage(src, 0, 0, w, w); return c; };
+    const e = { tile: mk(Paper.tile, Math.max(64, Math.round(512 * z))), tw: Math.max(64, Math.round(512 * z)), doodle: null };
+    const dw = Math.round(1024 * dz);
+    if (Paper.doodle && dw >= 64 && dw <= 2048) e.doodle = mk(Paper.doodle, dw);
+    this._bg = { [key]: e }; return e;            // хранится только один набор — память не растёт
+  }
+  /** Фон в экранных координатах. ox, oy — мировая точка в левом верхнем углу экрана; z — пикселей устройства на мировую единицу */
+  drawBackdrop(ctx, ox, oy, z, doodles, ruled, dox, doy) {
+    const W = this.canvas.width, H = this.canvas.height, bg = this.bgCache(z, z * 0.9);
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = false;
+    const vw = W / z, vh = H / z, T = 512;
+    const i0 = Math.floor(ox / T), i1 = Math.floor((ox + vw) / T), j0 = Math.floor(oy / T), j1 = Math.floor((oy + vh) / T);
+    for (let i = i0; i <= i1; i++) { const x0 = Math.round((i * T - ox) * z), x1 = Math.round(((i + 1) * T - ox) * z);
+      for (let j = j0; j <= j1; j++) { const y0 = Math.round((j * T - oy) * z), y1 = Math.round(((j + 1) * T - oy) * z); ctx.drawImage(bg.tile, x0, y0, x1 - x0, y1 - y0); } }
+    if (ruled) {
+      ctx.strokeStyle = 'rgba(120,160,215,0.20)'; ctx.lineWidth = Math.max(1, Math.round(1.2 * z)); ctx.beginPath();
+      for (let k = Math.floor((oy - 55.5) / 56); k * 56 + 55.5 <= oy + vh; k++) { const y = Math.round(((k * 56 + 55.5) - oy) * z) + 0.5; ctx.moveTo(0, y); ctx.lineTo(W, y); }
+      ctx.stroke();
+    }
+    if (doodles && bg.doodle) {
+      const D = bg.doodle.width, dx = -Math.round((dox * 0.5 * z) % D), dy = -Math.round((doy * 0.5 * z) % D);
+      for (let x = dx - D; x < W; x += D) for (let y = dy - D; y < H; y += D) ctx.drawImage(bg.doodle, x, y);
+    }
+  }
   drawPaper(ctx, view) {
-    ctx.fillStyle = this.paperPat; ctx.fillRect(view.x, view.y, view.w, view.h);
-    if (!this.settings.lowFx) { ctx.fillStyle = this.ruledPat; ctx.fillRect(view.x, view.y, view.w, view.h); }
+    const cam = this.cam, z = cam.zoom * this.dpr, lo = this.settings.lowFx;
+    this.drawBackdrop(ctx, cam.x - cam.vw / 2 - cam.sx, cam.y - cam.vh / 2 - cam.sy, z, !lo, !lo, cam.x, cam.y);
   }
-  drawDoodles(ctx, camX, camY, zoom) {
-    if (this.settings.lowFx || !Paper.doodle) return;
-    const s = zoom * 0.9, T = 1024 * s, ox = -((camX * 0.5 * zoom) % T), oy = -((camY * 0.5 * zoom) % T);
-    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-    for (let x = ox - T; x < this.W; x += T) for (let y = oy - T; y < this.H; y += T) ctx.drawImage(Paper.doodle, x, y, T, T);
-  }
+  drawDoodles() { /* каракули теперь рисуются вместе с фоном в drawBackdrop */ }
   draw(dt) {
     const ctx = this.ctx, dpr = this.dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.fillStyle = INK.paper; ctx.fillRect(0, 0, this.W, this.H);
     if (this.state === 'editor') { this.editor.draw(ctx); this.drawFps(ctx); return; }
     if (this.world && ['playing', 'paused', 'complete'].includes(this.state)) {
       const cam = this.cam, w = this.world, view = cam.view(80);
-      cam.apply(ctx, dpr); this.drawPaper(ctx, view);
-      this.drawDoodles(ctx, cam.x, cam.y, cam.zoom); cam.apply(ctx, dpr);
+      this.drawPaper(ctx, view); cam.apply(ctx, dpr);
       this.drawWorldEdges(ctx, w, view);
       w.draw(ctx, this.ha, this.sheet, cam.view(120)); this.particles.draw(ctx);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -220,8 +253,7 @@ class Game {
   drawMenuScene(ctx, dt) {
     const W = this.W, H = this.H, m = this.menu; m.t += dt;
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-    ctx.fillStyle = this.paperPat; ctx.fillRect(0, 0, W, H);
-    this.drawDoodles(ctx, m.t * 40, 0, 1);
+    this.drawBackdrop(ctx, 0, 0, this.dpr, !this.settings.lowFx, false, m.t * 40, 0);
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     const floorY = Math.round(H * 0.82);
     const v = this.ha.get('menu|' + Math.round(W), 3, Art.platform('solid', Math.round(W) + 40, 60)); ctx.save(); ctx.translate(-20, floorY); HandDrawnAnimator.render(ctx, v[this.ha.variant(HAND_FPS.platform, 0, 3)]); ctx.restore();
