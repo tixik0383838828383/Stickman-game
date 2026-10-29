@@ -1,0 +1,11 @@
+{
+  "name": "stickman-paper-parkour",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Stickman Paper Parkour — APK через Capacitor",
+  "dependencies": {
+    "@capacitor/android": "6.1.2",
+    "@capacitor/cli": "6.1.2",
+    "@capacitor/core": "6.1.2"
+  }
+}

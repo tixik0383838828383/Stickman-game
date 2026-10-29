@@ -1,0 +1,7 @@
+{
+  "appId": "com.tixik.stickmanparkour",
+  "appName": "Stickman Paper Parkour",
+  "webDir": "www",
+  "backgroundColor": "#f4efe0",
+  "android": { "allowMixedContent": false }
+}
