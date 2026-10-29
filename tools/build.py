@@ -14,6 +14,11 @@ def inl(m):
     return '<script>\n' + open(P(src), encoding='utf-8').read().replace('</script', '<\\/script') + '\n</script>'
 html = re.sub(r'<script src="([^"]+)"></script>', inl, html)
 os.makedirs(P('dist'), exist_ok=True)
+if '--start' in sys.argv:   # тестовая сборка: python3 tools/build.py --start 12  -> dist/stickman_L12_test.html (открывается сразу на уровне 12)
+    n = int(sys.argv[sys.argv.index('--start') + 1])
+    h2 = html.replace('<script>', '<script>window.__AUTOSTART=%d;</script>\n<script>' % (n - 1), 1)
+    assert h2 != html, 'не нашёл место вставки'
+    open(P('dist/stickman_L%d_test.html' % n), 'w', encoding='utf-8').write(h2); print('test build L%d' % n); sys.exit(0)
 out = P('dist/stickman_paper_parkour.html'); open(out, 'w', encoding='utf-8').write(html)
 print('single file', os.path.getsize(out) // 1024, 'KB')
 z = P('dist/stickman_paper_parkour_project.zip')

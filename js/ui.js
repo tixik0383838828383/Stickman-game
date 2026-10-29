@@ -122,14 +122,6 @@ class UIManager {
       el.onclick = () => { g.audio.unlock(); if (!unlocked) { g.audio.play('click'); this.toast('Сначала пройди предыдущий уровень'); return; } g.audio.play('click'); g.startLevel({ kind: 'main', index: i }); };
       grid.appendChild(el);
     });
-    if (typeof EXTRA_LEVELS !== 'undefined' && EXTRA_LEVELS.length) {
-      const h = document.createElement('h3'); h.textContent = 'Варианты уровней (вне прогресса)'; grid.appendChild(h);
-      EXTRA_LEVELS.forEach(L => {
-        const el = document.createElement('div'); el.className = 'lvl'; el.innerHTML = '<b>11б</b>' + L.name.replace(/^11б\.\s*/, '') + '<small>' + L.hint + '</small>';
-        el.onclick = () => { g.audio.unlock(); g.audio.play('click'); g.startLevel({ kind: 'custom', level: JSON.parse(JSON.stringify(L)) }); };
-        grid.appendChild(el);
-      });
-    }
     if (d.custom.length) {
       const h = document.createElement('h3'); h.textContent = 'Мои уровни'; grid.appendChild(h);
       d.custom.forEach((L, i) => {

@@ -2120,7 +2120,7 @@ const mk = (name, world, hint, w, h, sx, sy, b, extra) => LEVELS.push(Object.ass
   [2500, 2700, 2900].forEach(x => { b.saw(x, 640, 30); b.coin(x + 100, 560); });
   b.plat(3080, 690, 100).plat(3290, 660, 100);
   b.plat(3150, 590, 60).plat(3300, 540, 70);   // верхний путь за большой монетой
-  b.saw(3235, 610, 34).saw(3445, 470, 34);
+  b.saw(3235, 340, 34).saw(3445, 470, 34);
   b.coin(3130, 640).coin(3340, 610).coin(3235, 500, 5);
   b.cp(3550, 700).saw(3800, 672, 36).coins(3750, 580, 3, 50).fin(4100, 700);
   mk('Пилы', 2, 'Вращающиеся пилы: перепрыгивай, подныривай и не прыгай слишком высоко.', 4300, 900, 120, 700, b);
@@ -2292,7 +2292,7 @@ const mk = (name, world, hint, w, h, sx, sy, b, extra) => LEVELS.push(Object.ass
   // узкие платформы, зазоры по 150
   [[650, 700], [870, 690], [1090, 680], [1310, 670]].forEach(([x, y]) => { b.plat(x, y, 70, 20); b.coin(x + 35, y - 50); });
   // подъём с перепадами по 100
-  [[1520, 570], [1730, 470], [1940, 370]].forEach(([x, y]) => { b.plat(x, y, 70, 20); b.coin(x + 35, y - 50); });
+  [[1520, 570], [1730, 490], [1940, 390]].forEach(([x, y]) => { b.plat(x, y, 70, 20); b.coin(x + 35, y - 50); });
   b.saw(1625, 470, 32, { ty: 'v', rg: 70, sp: 150 });
   [[2160, 470], [2370, 570], [2580, 670]].forEach(([x, y]) => { b.plat(x, y, 70, 20); b.coin(x + 35, y - 50); });
   b.coin(2060, 280, 5);
@@ -2310,20 +2310,9 @@ const mk = (name, world, hint, w, h, sx, sy, b, extra) => LEVELS.push(Object.ass
   b.saw(4745, 560, 34, { ty: 'pend', rg: 150, ang: 40, sp: 3 });
   b.spike(4560, 678, 6).spike(5100, 678, 6);
   b.fin(5350, 700).coin(5250, 620, 5);
-  b.plat(1800, 220, 120, 20).coin(1860, 170, 's');
+  b.plat(1800, 290, 120, 20).coin(1860, 240, 's');
   mk('Почти невозможно', 4, 'Тонкие платформы, пилы на рельсах и вращающиеся лопасти. Терпение.', 5500, 900, 120, 700, b,
-    { route: [[685, 700], [905, 690], [1125, 680], [1345, 670], [1555, 570], [1765, 470], [1975, 370], [2195, 470], [2405, 570], [2615, 670], [2900, 700], [3750, 700], [4300, 700]], botN: 250000 });
-})();
-
-/* Вариант 11б — копия уровня 11, платформа после первой пилы ниже (отдельно, не входит в основной прогресс) */
-const EXTRA_LEVELS = [];
-(function () {
-  const L = JSON.parse(JSON.stringify(LEVELS[10]));
-  L.name = '11б. Почти невозможно (лайт)'; L.hint = 'Копия 11 уровня: платформа после первой пилы опущена.';
-  const mv = (x, dy) => L.obj.forEach(o => { if ((o.t === 'plat' && o.x === x) || (o.t === 'coin' && o.x === x + 35 && o.y > 100 && o.v === 1 && Math.abs(o.y - (o.y)) < 1 && o.y < 600 && o.x === x + 35)) o.y += dy; });
-  mv(1730, 20); mv(1940, 20);
-  L.route = [[685, 700], [905, 690], [1125, 680], [1345, 670], [1555, 570], [1765, 490], [1975, 390], [2195, 470], [2405, 570], [2615, 670], [2900, 700], [3750, 700], [4300, 700]];
-  EXTRA_LEVELS.push(L);
+    { route: [[685, 700], [905, 690], [1125, 680], [1345, 670], [1555, 570], [1765, 490], [1975, 390], [2195, 470], [2405, 570], [2615, 670], [2900, 700], [3750, 700], [4300, 700]], botN: 250000 });
 })();
 
 /* Уровень 12. Последняя страница — финал со всеми механиками */
@@ -2886,14 +2875,6 @@ class UIManager {
       el.onclick = () => { g.audio.unlock(); if (!unlocked) { g.audio.play('click'); this.toast('Сначала пройди предыдущий уровень'); return; } g.audio.play('click'); g.startLevel({ kind: 'main', index: i }); };
       grid.appendChild(el);
     });
-    if (typeof EXTRA_LEVELS !== 'undefined' && EXTRA_LEVELS.length) {
-      const h = document.createElement('h3'); h.textContent = 'Варианты уровней (вне прогресса)'; grid.appendChild(h);
-      EXTRA_LEVELS.forEach(L => {
-        const el = document.createElement('div'); el.className = 'lvl'; el.innerHTML = '<b>11б</b>' + L.name.replace(/^11б\.\s*/, '') + '<small>' + L.hint + '</small>';
-        el.onclick = () => { g.audio.unlock(); g.audio.play('click'); g.startLevel({ kind: 'custom', level: JSON.parse(JSON.stringify(L)) }); };
-        grid.appendChild(el);
-      });
-    }
     if (d.custom.length) {
       const h = document.createElement('h3'); h.textContent = 'Мои уровни'; grid.appendChild(h);
       d.custom.forEach((L, i) => {
@@ -3554,6 +3535,7 @@ class Game {
     document.addEventListener('contextmenu', e => { if (this.state === 'playing' || this.state === 'editor') e.preventDefault(); });
     this.resize();
     this.state = 'menu'; this.ui.show('menu');
+    if (typeof window.__AUTOSTART === 'number') this.startLevel({ kind: 'main', index: window.__AUTOSTART }); // тестовая сборка: сразу открыть нужный уровень
     this.last = performance.now(); requestAnimationFrame(t => this.frame(t));
   }
   /* ---------- анимации: пользовательская раскладка из Sprite Inspector ---------- */

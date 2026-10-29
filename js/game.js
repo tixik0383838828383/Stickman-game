@@ -26,6 +26,7 @@ class Game {
     document.addEventListener('contextmenu', e => { if (this.state === 'playing' || this.state === 'editor') e.preventDefault(); });
     this.resize();
     this.state = 'menu'; this.ui.show('menu');
+    if (typeof window.__AUTOSTART === 'number') this.startLevel({ kind: 'main', index: window.__AUTOSTART }); // тестовая сборка: сразу открыть нужный уровень
     this.last = performance.now(); requestAnimationFrame(t => this.frame(t));
   }
   /* ---------- анимации: пользовательская раскладка из Sprite Inspector ---------- */
