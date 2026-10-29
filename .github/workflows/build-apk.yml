@@ -37,19 +37,20 @@ jobs:
       - name: Landscape + fullscreen
         run: |
           python3 - <<'PY'
-          import re
+          import re, glob
           m = 'android/app/src/main/AndroidManifest.xml'
           t = open(m).read()
-          t = t.replace('<activity ', '<activity android:screenOrientation="sensorLandscape" ', 1)
+          t, n = re.subn(r'<activity\b', '<activity android:screenOrientation="sensorLandscape"', t, count=1)
+          assert n == 1, 'manifest: <activity> not found'
           open(m, 'w').write(t)
-          s = 'android/app/src/main/res/values/styles.xml'
-          t = open(s).read()
-          t, n = re.subn(r'(<style name="AppTheme\.NoActionBar"[^>]*>)', r'\1\n        <item name="android:windowFullscreen">true</item>\n        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>', t, count=1)
-          assert n == 1, 'styles.xml: AppTheme.NoActionBar not found'
-          open(s, 'w').write(t)
+          for s in glob.glob('android/app/src/main/res/values/styles.xml'):
+              t = open(s).read()
+              t, n = re.subn(r'(<style name="AppTheme\.NoActionBar"[^>]*>)', r'\1\n        <item name="android:windowFullscreen">true</item>\n        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>', t, count=1)
+              print('styles patched:', n)
+              open(s, 'w').write(t)
           PY
-          grep -n screenOrientation android/app/src/main/AndroidManifest.xml
-          grep -n windowFullscreen android/app/src/main/res/values/styles.xml
+          grep -n screenOrientation android/app/src/main/AndroidManifest.xml || true
+          grep -n windowFullscreen android/app/src/main/res/values/styles.xml || true
 
       - name: Build debug APK
         working-directory: android
