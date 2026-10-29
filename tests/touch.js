@@ -1,0 +1,25 @@
+const { chromium } = require('playwright'); const path = require('path');
+(async () => {
+  const b = await chromium.launch();
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const q = await ctx.newPage(); const errs = []; q.on('pageerror', e => errs.push(e.message));
+  await q.goto('file://' + path.resolve('dist/stickman_paper_parkour.html') + '#all'); await q.waitForTimeout(500);
+  await q.evaluate(() => __game.startLevel({ kind: 'main', index: 0 })); await q.waitForTimeout(400);
+  const c = id => q.evaluate(id => { const r = document.getElementById(id).getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2, r.width, r.height]; }, id);
+  const dp = await c('dpad'), jb = await c('btnJump'), db = await c('btnDown');
+  console.log('dpad', dp, 'jump', jb, 'down', db, 'overlap?', dp[0] + dp[2] / 2 > db[0] - db[2] / 2);
+  const cdp = await ctx.newCDPSession(q);
+  const x0 = await q.evaluate(() => __game.world.player.x);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: dp[0] + 40, y: dp[1], id: 1 }] });
+  await q.waitForTimeout(600);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: dp[0] + 40, y: dp[1], id: 1 }, { x: jb[0], y: jb[1], id: 2 }] });
+  await q.waitForTimeout(120);
+  const s = await q.evaluate(() => ({ x: __game.world.player.x, vy: __game.world.player.vy, g: __game.world.player.ground }));
+  console.log('multitouch: moved', s.x - x0, 'airborne', !s.g, 'vy', s.vy);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await q.waitForTimeout(300);
+  const x1 = await q.evaluate(() => __game.world.player.x); await q.waitForTimeout(300);
+  console.log('stopped after release:', Math.abs(await q.evaluate(() => __game.world.player.x) - x1) < 5, errs);
+  await q.screenshot({ path: '/tmp/s_portrait2.png' });
+  await b.close();
+})();

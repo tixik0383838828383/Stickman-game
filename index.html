@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f6f1e3">
+<title>Stickman Paper Parkour</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<!-- HUD -->
+<div id="hud" class="hidden">
+  <div class="hud-box" id="hudLevel">1</div>
+  <div class="hud-box">🪙 <b id="hudCoins">0</b></div>
+  <div class="hud-box">⏱ <b id="hudTime">00:00.00</b></div>
+  <div class="hud-box">☠ <b id="hudDeaths">0</b></div>
+  <div class="hud-box" id="hudCp" title="Контрольная точка">⚑</div>
+  <button class="hud-btn" id="btnPause" aria-label="Пауза">❚❚</button>
+</div>
+
+<!-- Экранные кнопки (мультитач) -->
+<div id="touch" class="hidden">
+  <div id="dpad"><span class="arrow l">◀</span><span class="arrow r">▶</span></div>
+  <div id="rightBtns"><button id="btnDown" class="tbtn small">▼</button><button id="btnJump" class="tbtn big">▲</button></div>
+</div>
+
+<div id="toast"></div>
+
+<!-- ГЛАВНОЕ МЕНЮ -->
+<section id="menu" class="screen">
+  <h1 class="title"><span>Stickman</span><span>Paper Parkour</span></h1>
+  <div class="menu-col">
+    <button class="btn" id="mContinue">Продолжить</button>
+    <button class="btn" id="mPlay">Играть</button>
+    <button class="btn" id="mLevels">Выбор уровня</button>
+    <button class="btn" id="mSettings">Настройки</button>
+    <button class="btn" id="mControls">Управление</button>
+    <button class="btn" id="mEditor">Редактор уровней</button>
+    <button class="btn small" id="mInspector">Sprite Inspector</button>
+  </div>
+  <div class="foot" id="menuFoot"></div>
+</section>
+
+<!-- ВЫБОР УРОВНЯ -->
+<section id="levels" class="screen">
+  <h2 class="title2">Выбор уровня</h2>
+  <div class="coins-total" id="lvCoins"></div>
+  <div class="level-grid" id="levelGrid"></div>
+  <div class="row"><button class="btn small" id="lvBack">← Назад</button></div>
+</section>
+
+<!-- НАСТРОЙКИ -->
+<section id="settings" class="screen">
+  <h2 class="title2">Настройки</h2>
+  <div class="panel scroll">
+    <label class="set"><span>Звук</span><input type="checkbox" id="sSound"></label>
+    <label class="set"><span>Громкость</span><input type="range" id="sVolume" min="0" max="1" step="0.05"></label>
+    <label class="set"><span>Эффект ручного рисунка</span><input type="range" id="sHandFx" min="0" max="2" step="0.1"><em id="vHandFx"></em></label>
+    <label class="set"><span>Масштаб интерфейса</span><input type="range" id="sUi" min="0.8" max="1.4" step="0.05"><em id="vUi"></em></label>
+    <label class="set"><span>Масштаб игры (зум)</span><input type="range" id="sZoom" min="0.7" max="1.4" step="0.05"><em id="vZoom"></em></label>
+    <label class="set"><span>Размер кнопок на телефоне</span><input type="range" id="sTouchSize" min="0.6" max="1.8" step="0.05"><em id="vTouchSize"></em></label>
+    <label class="set"><span>Прозрачность кнопок</span><input type="range" id="sTouchOp" min="0.15" max="1" step="0.05"><em id="vTouchOp"></em></label>
+    <label class="set"><span>Экранные кнопки</span><select id="sShowTouch"><option value="auto">Авто</option><option value="on">Всегда</option><option value="off">Выкл</option></select></label>
+    <label class="set"><span>Качество частиц</span><select id="sParticles"><option value="high">Высокое</option><option value="med">Среднее</option><option value="low">Низкое</option></select></label>
+    <label class="set"><span>Упрощённая графика (слабые устройства)</span><input type="checkbox" id="sLowFx"></label>
+    <div class="set"><button class="btn small" id="sFull">Полный экран</button><button class="btn small danger" id="sReset">Сбросить прогресс</button></div>
+  </div>
+  <div class="row"><button class="btn small" id="sBack">← Назад</button></div>
+</section>
+
+<!-- УПРАВЛЕНИЕ -->
+<section id="controls" class="screen">
+  <h2 class="title2">Управление</h2>
+  <div class="panel scroll ctl">
+    <table>
+      <tr><th>Компьютер</th><th></th></tr>
+      <tr><td>A / D, ← →</td><td>движение</td></tr>
+      <tr><td>Пробел / W / ↑</td><td>прыжок (держи — выше), у верёвки — лезть вверх</td></tr>
+      <tr><td>S / ↓</td><td>присесть; на бегу — слайд; у верёвки — вниз; на тонкой платформе — спрыгнуть</td></tr>
+      <tr><td>Прыжок у стены</td><td>скольжение по стене и прыжок от стены (←/→ в сторону стены)</td></tr>
+      <tr><td>R</td><td>вернуться на контрольную точку</td></tr>
+      <tr><td>Esc / P</td><td>пауза</td></tr>
+      <tr><th>Телефон</th><th></th></tr>
+      <tr><td>◀ ▶ (слева)</td><td>движение (можно водить пальцем)</td></tr>
+      <tr><td>▲ ▼ (справа)</td><td>прыжок и присед/слайд — работает вместе с движением (мультитач)</td></tr>
+      <tr><th>Мир</th><th></th></tr>
+      <tr><td>Флажок</td><td>контрольная точка</td></tr>
+      <tr><td>Красное — смерть</td><td>шипы, пилы, лазеры, дротики, падающие грузы</td></tr>
+      <tr><td>Мигает / трясётся</td><td>платформа скоро рухнет или исчезнет</td></tr>
+    </table>
+  </div>
+  <div class="row"><button class="btn small" id="cBack">← Назад</button></div>
+</section>
+
+<!-- ПАУЗА -->
+<section id="pause" class="screen overlay">
+  <h2 class="title2">Пауза</h2>
+  <div class="menu-col">
+    <button class="btn" id="pResume">Продолжить</button>
+    <button class="btn" id="pRestart">Перезапустить уровень</button>
+    <button class="btn" id="pSettings">Настройки</button>
+    <button class="btn" id="pEditor">Вернуться в редактор</button>
+    <button class="btn" id="pMenu">В главное меню</button>
+  </div>
+</section>
+
+<!-- ЭКРАН ЗАВЕРШЕНИЯ -->
+<section id="complete" class="screen overlay">
+  <h2 class="title2" id="cTitle">Уровень пройден!</h2>
+  <div class="panel stats" id="cStats"></div>
+  <div class="menu-col">
+    <button class="btn" id="cNext">Следующий уровень</button>
+    <button class="btn" id="cAgain">Ещё раз</button>
+    <button class="btn" id="cMenu">В меню</button>
+  </div>
+</section>
+
+<!-- ПОДТВЕРЖДЕНИЕ -->
+<section id="confirm" class="screen overlay">
+  <div class="panel"><p id="cfText"></p><div class="row"><button class="btn small danger" id="cfYes">Да</button><button class="btn small" id="cfNo">Отмена</button></div></div>
+</section>
+
+<!-- РЕДАКТОР -->
+<section id="editorUI" class="hidden">
+  <div id="edTop">
+    <input id="edName" placeholder="Название уровня" maxlength="40">
+    <button class="ebtn" id="edTest" title="Тест">▶ Тест</button>
+    <button class="ebtn" id="edCheck" title="Проверка">✓ Проверка</button>
+    <button class="ebtn" id="edBot" title="Автопроверка бота">🤖 Бот</button>
+    <button class="ebtn" id="edSave">💾 Сохранить</button>
+    <button class="ebtn" id="edCopy">⧉ Копия</button>
+    <button class="ebtn" id="edExport">⤓ Экспорт</button>
+    <button class="ebtn" id="edImport">⤒ Импорт</button>
+    <button class="ebtn" id="edUndo">↶</button><button class="ebtn" id="edRedo">↷</button>
+    <button class="ebtn" id="edGrid">▦ Сетка</button>
+    <label class="ebtn size">Ш <input id="edW" type="number" min="800" max="20000" step="100"></label>
+    <label class="ebtn size">В <input id="edH" type="number" min="600" max="6000" step="100"></label>
+    <button class="ebtn" id="edMy">📁 Мои</button>
+    <button class="ebtn danger" id="edExit">✕ Выход</button>
+  </div>
+  <div id="edTools"></div>
+  <div id="edProps" class="hidden"></div>
+  <div id="edMsg"></div>
+  <div id="edDialog" class="hidden"><div class="panel"><h3 id="edDlgTitle"></h3><textarea id="edDlgText" spellcheck="false"></textarea><div class="row"><button class="btn small" id="edDlgOk">OK</button><button class="btn small" id="edDlgCopy">Копировать</button><button class="btn small" id="edDlgFile">Файл…</button><button class="btn small" id="edDlgCancel">Закрыть</button></div></div></div>
+  <input type="file" id="edFile" accept=".json,application/json" class="hidden">
+</section>
+
+<!-- SPRITE INSPECTOR -->
+<section id="inspector" class="hidden">
+  <div id="inTop">
+    <b>Sprite Inspector</b>
+    <label>Масштаб <input id="inZoom" type="range" min="0.25" max="3" step="0.05" value="0.6"></label>
+    <label><input type="checkbox" id="inNums" checked> номера</label>
+    <button class="ebtn" id="inClear">Снять выбор</button>
+    <button class="ebtn danger" id="inExit">✕ Закрыть</button>
+  </div>
+  <div id="inBody">
+    <div id="inSheetWrap"><canvas id="inSheet"></canvas></div>
+    <div id="inPanel">
+      <div class="inrow"><b id="inSel">Выбрано: 0</b></div>
+      <div class="inrow"><input id="inName" list="inNames" placeholder="имя анимации"><datalist id="inNames"></datalist></div>
+      <div class="inrow">FPS <input id="inFps" type="number" min="1" max="60" value="10"> <label><input type="checkbox" id="inLoop" checked> цикл</label></div>
+      <div class="inrow">сдвиг X <input id="inOx" type="number" value="0"> Y <input id="inOy" type="number" value="0"> масштаб <input id="inScale" type="number" step="0.1" value="1"></div>
+      <div class="inrow"><button class="ebtn" id="inApply">Создать / обновить анимацию</button></div>
+      <canvas id="inPrev" width="160" height="160"></canvas>
+      <div class="inrow">Кадр по координатам: sx<input id="cx" type="number" class="n"> sy<input id="cy" type="number" class="n"> sw<input id="cw" type="number" class="n"> sh<input id="ch" type="number" class="n"> <button class="ebtn" id="inAddRect">+ кадр</button></div>
+      <div class="inrow"><button class="ebtn" id="inSave">Применить в игре и сохранить</button><button class="ebtn" id="inReset">Сбросить</button></div>
+      <div class="inrow"><button class="ebtn" id="inExport">Экспорт JSON</button><button class="ebtn" id="inImport">Импорт JSON</button></div>
+      <textarea id="inJson" spellcheck="false"></textarea>
+      <div id="inList"></div>
+    </div>
+  </div>
+</section>
+
+<script src="assets/sprites.js"></script>
+<script src="assets/sheet_data.js"></script>
+<script src="js/config.js"></script>
+<script src="js/util.js"></script>
+<script src="js/spritesheet.js"></script>
+<script src="js/drawing.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/player.js"></script>
+<script src="js/physics.js"></script>
+<script src="js/world.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/particles.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/save.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/input.js"></script>
+<script src="js/pathbot.js"></script>
+<script src="js/validator.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/editor.js"></script>
+<script src="js/inspector.js"></script>
+<script src="js/game.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
