@@ -1,7 +1,7 @@
 /* drawing.js — «ожившая бумага»: эскизные примитивы, кэш вариантов рисунка (Path2D),
    HandDrawnAnimator и процедурная бумага. Здесь меняется ТОЛЬКО картинка — физика не затрагивается. */
 'use strict';
-const FONT = '"Segoe Print","Bradley Hand","Chalkboard SE","Comic Sans MS","Marker Felt","Noto Sans",cursive,sans-serif';
+const FONT = '"Neucha","Segoe Print","Bradley Hand","Chalkboard SE","Comic Sans MS","Noto Sans",cursive,sans-serif';
 
 /* ---------- эскизные примитивы: добавляют кривые в Path2D с лёгким дрожанием ---------- */
 const Sketch = {

@@ -42,12 +42,14 @@ class UIManager {
   }
   _wobble() {
     const fx = this.g.settings; if (fx.handFx <= 0 || fx.lowFx || document.hidden) return;
+    if (performance.now() - (this._scrollT || 0) < 450) return;   // во время прокрутки списков не трогаем разметку — иначе мерцание на краях
     const els = document.querySelectorAll('.screen.show .btn, .screen.show .panel, .screen.show .lvl, .hud-box, #hud .hud-btn');
     for (const e of els) { let v = (+e.dataset.v || 0) + 1 + (Math.random() < 0.4 ? 1 : 0); e.dataset.v = v % 3; }
   }
   /* ---------- привязка кнопок ---------- */
   _bind() {
     const g = this.g, $ = this.$;
+    document.addEventListener('scroll', () => { this._scrollT = performance.now(); }, true);
     const click = (id, fn) => $(id).addEventListener('click', e => { g.audio.unlock(); g.audio.play('click'); fn(e); });
     click('mContinue', () => g.continueGame());
     click('mPlay', () => g.startLevel({ kind: 'main', index: 0 }));

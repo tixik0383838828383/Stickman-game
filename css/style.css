@@ -1,5 +1,5 @@
 /* Stickman Paper Parkour — стили интерфейса (бумага + рисованные рамки) */
-:root { --ink:#1b1b21; --paper:#f6f1e3; --paper2:#ece4cf; --red:#d4352c; --ui:1; --tsize:1; --topac:.55; --font:"Segoe Print","Bradley Hand","Chalkboard SE","Comic Sans MS","Marker Felt","Noto Sans",cursive,sans-serif; }
+:root { --ink:#1b1b21; --paper:#f6f1e3; --paper2:#ece4cf; --red:#d4352c; --ui:1; --tsize:1; --topac:.55; --font:"Neucha","Segoe Print","Bradley Hand","Chalkboard SE","Comic Sans MS","Noto Sans",cursive,sans-serif; }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin:0; height:100%; overflow:hidden; background:var(--paper); color:var(--ink); font-family:var(--font); touch-action:none; user-select:none; -webkit-user-select:none; overscroll-behavior:none; }
 canvas#game { position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; }
@@ -28,7 +28,7 @@ button { font-family:var(--font); color:var(--ink); }
 .screen#levels, .screen#settings, .screen#controls { background:rgba(246,241,227,.92); }
 .title { margin:0 0 .3em; text-align:center; line-height:1; font-size:calc(min(11vw,76px)*var(--ui)); letter-spacing:.02em; transform:rotate(-2deg); text-shadow:3px 3px 0 rgba(27,27,33,.18); }
 .title span { display:block; }
-.title span:nth-child(2) { color:#e8711a; -webkit-text-stroke:2px var(--ink); font-size:.82em; }
+.title span:nth-child(2) { color:#e8711a; -webkit-text-stroke:6px var(--ink); paint-order:stroke fill; font-size:.82em; }
 .title2 { margin:0; font-size:calc(34px*var(--ui)); transform:rotate(-1deg); }
 .menu-col { display:flex; flex-direction:column; align-items:center; }
 .row { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
@@ -119,3 +119,12 @@ button { font-family:var(--font); color:var(--ink); }
   .tbtn.small { width:calc(64px*var(--tsize)); height:calc(64px*var(--tsize)); }
   #rightBtns { gap:6px; }
 }
+
+/* списки с прокруткой: без поворота рамок (он давал мерцание у краёв) и без «резинки» на краю */
+.level-grid, .panel.scroll, #edTools, #edProps { overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+.level-grid [data-v], .panel.scroll [data-v], .level-grid .lvl, .ctl [data-v] { transform:none !important; }
+.level-grid .lvl, .panel.scroll { backface-visibility:hidden; -webkit-backface-visibility:hidden; }
+
+/* HUD: цифры фиксированной ширины, чтобы рамки не «дышали» при смене значений */
+#hudTime, #hudCoins, #hudDeaths { display:inline-block; text-align:center; font-variant-numeric:tabular-nums; }
+#hudTime { min-width:5.6em; } #hudCoins, #hudDeaths { min-width:1.6em; }

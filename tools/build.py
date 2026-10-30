@@ -8,7 +8,7 @@ open(P('assets/sprites.js'), 'w').write('window.SPRITES_JSON=' + json.dumps(sj, 
 b64 = base64.b64encode(open(P('assets/stickman_sheet.png'), 'rb').read()).decode()
 open(P('assets/sheet_data.js'), 'w').write('window.SHEET_DATA_URI="data:image/png;base64,' + b64 + '";\n')
 html = open(P('index.html'), encoding='utf-8').read()
-html = re.sub(r'<link[^>]*href="css/style.css"[^>]*>', lambda m: '<style>\n' + open(P('css/style.css'), encoding='utf-8').read() + '\n</style>', html)
+html = re.sub(r'<link[^>]*href="(css/[^"]+\.css)"[^>]*>', lambda m: '<style>\n' + open(P(m.group(1)), encoding='utf-8').read() + '\n</style>', html)
 def inl(m):
     src = m.group(1)
     return '<script>\n' + open(P(src), encoding='utf-8').read().replace('</script', '<\\/script') + '\n</script>'
